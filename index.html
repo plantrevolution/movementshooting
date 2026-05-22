@@ -103,7 +103,7 @@
   }
   .actions button:hover { background: rgba(255,255,255,0.2); }
 
-  main { padding: 24px; max-width: 1800px; margin: 0 auto; }
+  main { padding: 16px; margin: 0 auto; }
   .tab { display: none; }
   .tab.active { display: block; }
 
@@ -147,13 +147,32 @@
   table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 13px;
+    font-size: 12px;
   }
-  #content-table {
+  #content-table, #product-table {
     table-layout: fixed;
     width: max-content;
     min-width: 100%;
   }
+  th { position: relative; }
+  .resize-handle {
+    position: absolute;
+    right: -3px;
+    top: 0;
+    bottom: 0;
+    width: 6px;
+    cursor: col-resize;
+    user-select: none;
+    z-index: 11;
+  }
+  .resize-handle:hover {
+    background: rgba(255,255,255,0.25);
+  }
+  .resize-handle.dragging {
+    background: rgba(255,255,255,0.5);
+  }
+  body.col-resizing { cursor: col-resize !important; }
+  body.col-resizing * { cursor: col-resize !important; user-select: none !important; }
   thead {
     position: sticky;
     top: 0;
@@ -163,7 +182,7 @@
   th {
     color: #fff;
     text-align: left;
-    padding: 12px 10px;
+    padding: 10px 8px;
     font-weight: 600;
     font-size: 12px;
     letter-spacing: 0.3px;
@@ -173,7 +192,7 @@
   th:last-child { border-right: none; }
 
   td {
-    padding: 8px 10px;
+    padding: 6px 8px;
     border-bottom: 1px solid var(--border-soft);
     border-right: 1px solid var(--border-soft);
     vertical-align: middle;
@@ -189,11 +208,39 @@
     width: 100%;
     border: 1px solid transparent;
     background: transparent;
-    padding: 5px 6px;
+    padding: 4px 4px;
     border-radius: 4px;
     font: inherit;
     color: var(--text);
     transition: border-color 0.15s;
+  }
+  td input[type="number"] {
+    padding: 4px 2px;
+    text-align: center;
+    -moz-appearance: textfield;
+  }
+  td input[type="number"]::-webkit-outer-spin-button,
+  td input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  td select {
+    font-size: 11px;
+    padding-right: 0;
+  }
+  td input[type="number"] {
+    width: 50%;
+    display: block;
+    margin: 0 auto;
+    text-align: center;
+    padding: 4px 2px;
+    -webkit-appearance: none;
+    -moz-appearance: textfield;
+  }
+  td input[type="number"]::-webkit-outer-spin-button,
+  td input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
   }
   td input:focus, td select:focus, td textarea:focus {
     outline: none;
@@ -218,14 +265,13 @@
   .ref-cell {
     display: flex;
     flex-wrap: wrap;
-    gap: 4px;
+    gap: 3px;
     align-items: center;
-    min-width: 130px;
   }
   .ref-thumb {
     position: relative;
-    width: 44px;
-    height: 44px;
+    width: 32px;
+    height: 32px;
     border-radius: 4px;
     overflow: hidden;
     cursor: zoom-in;
@@ -280,8 +326,8 @@
   .ref-upload {
     display: inline-flex;
     align-items: center;
-    padding: 6px 10px;
-    font-size: 11px;
+    padding: 4px 8px;
+    font-size: 12px;
     color: var(--text-muted);
     background: #fff;
     border: 1px dashed var(--border);
@@ -319,7 +365,7 @@
   .image-close:hover { background: var(--cream); }
 
   /* Product picker */
-  .product-picker { position: relative; min-width: 200px; }
+  .product-picker { position: relative; }
   .picker-display {
     min-height: 32px;
     padding: 4px 6px;
@@ -337,11 +383,14 @@
   .chip {
     background: var(--sage-light);
     color: var(--sage-dark);
-    padding: 2px 8px;
+    padding: 1px 6px;
     border-radius: 12px;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 500;
     white-space: nowrap;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .picker-dropdown {
     position: absolute;
@@ -414,6 +463,42 @@
   .check.checked::after { content: "✓"; }
   .check[title] { cursor: help; }
 
+  /* Status checkbox (Durum column) */
+  .status-checkbox {
+    appearance: none;
+    -webkit-appearance: none;
+    box-sizing: border-box;
+    width: 15px;
+    height: 15px;
+    border: 2px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-block;
+    vertical-align: middle;
+    position: relative;
+    background: #fff;
+    margin: 0;
+    flex-shrink: 0;
+  }
+  .status-checkbox:checked {
+    background: var(--sage);
+    border-color: var(--sage);
+  }
+  .status-checkbox:checked::after {
+    content: "✓";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 1;
+  }
+  td.status-cell { text-align: center; padding: 0; }
+  td.num-cell { padding: 0; }
+  td.num-cell input[type="number"] { padding: 4px 0; font-size: 10px; }
+
   .btn {
     background: var(--sage); color: #fff;
     border: none;
@@ -433,6 +518,14 @@
     font-size: 16px;
   }
   .btn-danger:hover { background: #f7d4d4; }
+  .btn-duplicate {
+    background: transparent; color: var(--sage);
+    border: 1px solid transparent;
+    padding: 4px 6px; cursor: pointer; border-radius: 4px;
+    font-size: 16px; font-weight: 700;
+    margin-right: 2px;
+  }
+  .btn-duplicate:hover { background: var(--sage-light); }
 
   .toolbar {
     display: flex;
@@ -577,6 +670,9 @@
       <div class="toolbar-left">
         <button class="btn" id="btn-add-product">+ Ürün ekle</button>
       </div>
+      <div class="toolbar-right">
+        <button class="btn btn-secondary" id="btn-reset-cols-product" title="Sütunları varsayılana döndür">Sütunları sıfırla</button>
+      </div>
     </div>
 
     <div class="table-wrapper">
@@ -585,11 +681,12 @@
           <tr>
             <th style="width: 100px;">Model</th>
             <th style="width: 150px;">Renk</th>
-            <th class="check-cell">Lookbook</th>
-            <th class="check-cell">Editorial</th>
-            <th class="check-cell">Creative</th>
-            <th class="check-cell">Epoksi Video</th>
-            <th class="check-cell">Epoksi Foto</th>
+            <th style="width: 100px;" class="check-cell">Lookbook V</th>
+            <th style="width: 100px;" class="check-cell">Lookbook F</th>
+            <th style="width: 90px;" class="check-cell">Editorial</th>
+            <th style="width: 90px;" class="check-cell">Creative</th>
+            <th style="width: 90px;" class="check-cell">Epoksi V</th>
+            <th style="width: 90px;" class="check-cell">Epoksi F</th>
             <th style="width: 50px;"></th>
           </tr>
         </thead>
@@ -611,6 +708,9 @@
       <div class="toolbar-left">
         <button class="btn" id="btn-add-content">+ İçerik ekle</button>
       </div>
+      <div class="toolbar-right">
+        <button class="btn btn-secondary" id="btn-reset-cols-content" title="Sütunları varsayılana döndür">Sütunları sıfırla</button>
+      </div>
     </div>
 
     <div class="table-wrapper">
@@ -618,20 +718,18 @@
         <thead>
           <tr>
             <th style="width: 40px;">#</th>
-            <th style="width: 70px;">Süre (dk)</th>
-            <th style="width: 140px;">Referans</th>
+            <th style="width: 15px;" data-no-resize>Durum</th>
+            <th style="width: 15px;" data-no-resize>Süre</th>
+            <th style="width: 50px;">Ref</th>
             <th style="width: 200px;">İçerik fikri / konsept</th>
             <th style="width: 200px;">İçerik açıklaması</th>
-            <th style="width: 200px;">Teknik detay</th>
-            <th style="width: 110px;">Video / Foto</th>
+            <th style="width: 50px;">V/F</th>
             <th style="width: 130px;">Tür</th>
-            <th style="width: 100px;">Yatay/Dikey</th>
-            <th style="width: 220px;">Ürün(ler)</th>
-            <th style="width: 130px;">Stüdyo / Epoksi</th>
+            <th style="width: 70px;">Ürünler</th>
+            <th style="width: 50px;">S/E</th>
             <th style="width: 130px;">Sorumlu</th>
-            <th style="width: 130px;">Durum</th>
             <th style="width: 200px;">Edit notu</th>
-            <th style="width: 50px;"></th>
+            <th style="width: 60px;"></th>
           </tr>
         </thead>
         <tbody id="content-tbody"></tbody>
@@ -727,9 +825,10 @@ const TUR = ["Editorial", "Lookbook", "Creative"];
 const TYPES = ["Video", "Foto", "Video+Foto"];
 const ORIENTATIONS = ["Dikey", "Yatay", "Kare"];
 const STATUSES = ["Planlandı", "Çekildi", "Tekrar", "İptal"];
+const RESPONSIBLES = ["Semih", "Tuana", "Yasin", "Helin", "Elif"];
 
-// Product checkbox columns — kept for product list (5 columns)
-const PRODUCT_FLAGS = ["Lookbook", "Editorial", "Creative", "Epoksi Video", "Epoksi Foto"];
+// Product checkbox columns — kept for product list (6 columns)
+const PRODUCT_FLAGS = ["Lookbook Video", "Lookbook Foto", "Editorial", "Creative", "Epoksi Video", "Epoksi Foto"];
 
 const LEGACY_KEY = "prev-cekim-planlama-v1";
 
@@ -829,6 +928,109 @@ function autoGrowAll(container) {
   container.querySelectorAll("textarea").forEach(autoGrowTextarea);
 }
 
+// ResizeObserver: automatically re-grow textarea whenever its width changes
+// (handles column resize, window resize, tab switch, etc.)
+const textareaResizeObserver = (typeof ResizeObserver !== "undefined")
+  ? new ResizeObserver((entries) => {
+      for (const entry of entries) autoGrowTextarea(entry.target);
+    })
+  : null;
+
+function observeTextareas(container) {
+  if (!textareaResizeObserver) return;
+  container.querySelectorAll("textarea").forEach(ta => textareaResizeObserver.observe(ta));
+}
+
+// ============================================================
+// COLUMN RESIZE (per-device, saved to localStorage)
+// ============================================================
+const COL_WIDTHS_KEY = "prev-col-widths-v5";
+
+function getStoredColWidths() {
+  try {
+    return JSON.parse(localStorage.getItem(COL_WIDTHS_KEY) || "{}");
+  } catch { return {}; }
+}
+
+function saveColWidth(tableId, colIndex, width) {
+  const all = getStoredColWidths();
+  if (!all[tableId]) all[tableId] = {};
+  all[tableId][colIndex] = width;
+  try { localStorage.setItem(COL_WIDTHS_KEY, JSON.stringify(all)); } catch {}
+}
+
+function applyStoredColWidths(tableId) {
+  const all = getStoredColWidths();
+  const widths = all[tableId];
+  if (!widths) return;
+  const table = document.getElementById(tableId);
+  if (!table) return;
+  const ths = table.querySelectorAll("thead th");
+  Object.entries(widths).forEach(([idx, w]) => {
+    if (ths[idx] && w && !ths[idx].hasAttribute("data-no-resize")) {
+      ths[idx].style.width = w + "px";
+    }
+  });
+}
+
+function resetColWidths(tableId) {
+  const all = getStoredColWidths();
+  delete all[tableId];
+  try { localStorage.setItem(COL_WIDTHS_KEY, JSON.stringify(all)); } catch {}
+  location.reload();
+}
+
+function setupColumnResize(tableId) {
+  const table = document.getElementById(tableId);
+  if (!table) return;
+  const ths = table.querySelectorAll("thead th");
+  ths.forEach((th, idx) => {
+    if (idx === ths.length - 1) return; // skip last column (delete buttons)
+    if (th.hasAttribute("data-no-resize")) return; // skip fixed-width columns
+    if (th.querySelector(".resize-handle")) return; // already added
+
+    const handle = document.createElement("div");
+    handle.className = "resize-handle";
+    th.appendChild(handle);
+
+    handle.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const startX = e.clientX;
+      const startWidth = th.offsetWidth;
+      handle.classList.add("dragging");
+      document.body.classList.add("col-resizing");
+
+      let raf = null;
+      const tbody = tableId === "content-table" ? document.getElementById("content-tbody") : null;
+
+      function onMove(ev) {
+        const delta = ev.clientX - startX;
+        const newWidth = Math.max(15, startWidth + delta);
+        th.style.width = newWidth + "px";
+        // Re-grow textareas live as column width changes (throttled to one per frame)
+        if (tbody && !raf) {
+          raf = requestAnimationFrame(() => {
+            autoGrowAll(tbody);
+            raf = null;
+          });
+        }
+      }
+      function onUp() {
+        document.removeEventListener("mousemove", onMove);
+        document.removeEventListener("mouseup", onUp);
+        handle.classList.remove("dragging");
+        document.body.classList.remove("col-resizing");
+        saveColWidth(tableId, idx, th.offsetWidth);
+        // Final autoGrow after release in case last frame was skipped
+        if (tbody) autoGrowAll(tbody);
+      }
+      document.addEventListener("mousemove", onMove);
+      document.addEventListener("mouseup", onUp);
+    });
+  });
+}
+
 // Focus preservation across re-renders
 function preserveFocus(renderFn) {
   const active = document.activeElement;
@@ -839,6 +1041,13 @@ function preserveFocus(renderFn) {
   const selEnd = active?.selectionEnd;
   const tableWrappers = document.querySelectorAll(".table-wrapper");
   const scrolls = Array.from(tableWrappers).map(w => ({ el: w, top: w.scrollTop, left: w.scrollLeft }));
+
+  // Capture which pickers are currently open
+  const openPickers = [];
+  document.querySelectorAll(".picker-dropdown.open").forEach(d => {
+    if (d.dataset.pickerDropdown) openPickers.push({ type: "picker", id: d.dataset.pickerDropdown });
+    if (d.dataset.respDropdown) openPickers.push({ type: "resp", id: d.dataset.respDropdown });
+  });
 
   renderFn();
 
@@ -853,6 +1062,17 @@ function preserveFocus(renderFn) {
     }
   }
   scrolls.forEach(({ el, top, left }) => { el.scrollTop = top; el.scrollLeft = left; });
+
+  // Restore open pickers
+  openPickers.forEach(({ type, id }) => {
+    if (type === "picker") {
+      document.querySelector(`[data-picker-dropdown="${id}"]`)?.classList.add("open");
+      document.querySelector(`[data-picker-toggle="${id}"]`)?.classList.add("open");
+    } else if (type === "resp") {
+      document.querySelector(`[data-resp-dropdown="${id}"]`)?.classList.add("open");
+      document.querySelector(`[data-resp-toggle="${id}"]`)?.classList.add("open");
+    }
+  });
 }
 
 // ============================================================
@@ -1005,14 +1225,12 @@ async function migrateLocal(legacyData) {
         duration: c.duration ?? 25,
         concept: c.concept || "",
         description: c.description || "",
-        technical: c.technical || "",
         refs: newRefs,
         type: newType,
         tur: newTur,
-        orientation: c.orientation || "",
         productIds: mappedProductIds,
         category: newCategory,
-        responsible: c.responsible || "",
+        responsible: Array.isArray(c.responsible) ? c.responsible : (c.responsible ? [c.responsible] : []),
         status: c.status || "Planlandı",
         editNote: c.editNote || "",
         order: i + 1,
@@ -1034,11 +1252,11 @@ async function migrateLocal(legacyData) {
 function emptyContent(duration, order) {
   return {
     duration: duration || 25,
-    concept: "", description: "", technical: "",
+    concept: "", description: "",
     refs: [],
-    type: "", tur: "", orientation: "",
+    type: "", tur: "",
     productIds: [], category: "",
-    responsible: "", status: "Planlandı", editNote: "",
+    responsible: [], status: "Planlandı", editNote: "",
     order,
     createdAt: serverTimestamp(),
   };
@@ -1092,6 +1310,41 @@ async function deleteContentRow(id) {
   return trackWrite(deleteDoc(doc(db, "content", id)));
 }
 
+async function duplicateContentRow(id) {
+  const c = state.content.find(c => c.id === id);
+  if (!c) return;
+  const originalOrder = c.order || 0;
+  // Find rows that come after the original — they need to shift down by 1
+  const rowsToShift = state.content.filter(x => (x.order || 0) > originalOrder);
+
+  const batch = writeBatch(db);
+
+  // Shift subsequent rows
+  rowsToShift.forEach(row => {
+    batch.update(doc(db, "content", row.id), { order: (row.order || 0) + 1 });
+  });
+
+  // Insert duplicate at originalOrder + 1
+  const newRef = doc(contentCol);
+  batch.set(newRef, {
+    duration: c.duration ?? 25,
+    concept: c.concept || "",
+    description: c.description || "",
+    refs: [], // not copied — original Storage paths shouldn't be shared
+    type: c.type || "",
+    tur: c.tur || "",
+    productIds: [], // not copied — fresh row gets no products
+    category: c.category || "",
+    responsible: Array.isArray(c.responsible) ? [...c.responsible] : (c.responsible ? [c.responsible] : []),
+    status: "Planlandı", // always reset
+    editNote: "", // not copied
+    order: originalOrder + 1,
+    createdAt: serverTimestamp(),
+  });
+
+  return trackWrite(batch.commit());
+}
+
 async function uploadContentRef(contentId, file) {
   if (!file.type.startsWith("image/")) throw new Error("Sadece görsel dosyaları");
   const blob = await resizeImageToBlob(file);
@@ -1120,24 +1373,26 @@ async function deleteContentRef(contentId, refIndex) {
 // RENDER — Products
 // ============================================================
 function getProductCategoryMap() {
-  // Maps each productId → { Lookbook: [rows], Editorial: [rows], Creative: [rows], "Epoksi Video": [rows], "Epoksi Foto": [rows] }
+  // Maps each productId → { Lookbook Video: [rows], Lookbook Foto: [rows], Editorial: [rows], Creative: [rows], "Epoksi Video": [rows], "Epoksi Foto": [rows] }
   // Binding logic:
-  //   product.Lookbook  ← content.tur === "Lookbook"
+  //   product."Lookbook Video" ← content.tur === "Lookbook" && (type Video or Video+Foto)
+  //   product."Lookbook Foto"  ← content.tur === "Lookbook" && (type Foto or Video+Foto)
   //   product.Editorial ← content.tur === "Editorial"
   //   product.Creative  ← content.tur === "Creative"
-  //   product.Epoksi Video ← content.category === "Epoksi" && (type Video or Video+Foto)
-  //   product.Epoksi Foto  ← content.category === "Epoksi" && (type Foto or Video+Foto)
+  //   product."Epoksi Video" ← content.category === "Epoksi" && (type Video or Video+Foto)
+  //   product."Epoksi Foto"  ← content.category === "Epoksi" && (type Foto or Video+Foto)
   // IMPORTANT: only content rows with status === "Çekildi" contribute.
-  // Each content row independently contributes — if same product appears in multiple rows
-  // with different tur/category values, multiple checkboxes are marked.
   const map = {};
   state.products.forEach(p => {
-    map[p.id] = { Lookbook: [], Editorial: [], Creative: [], "Epoksi Video": [], "Epoksi Foto": [] };
+    map[p.id] = { "Lookbook Video": [], "Lookbook Foto": [], Editorial: [], Creative: [], "Epoksi Video": [], "Epoksi Foto": [] };
   });
   state.content.forEach((c, idx) => {
     if (c.status !== "Çekildi") return;
     const flags = [];
-    if (c.tur === "Lookbook") flags.push("Lookbook");
+    if (c.tur === "Lookbook") {
+      if (c.type === "Video" || c.type === "Video+Foto") flags.push("Lookbook Video");
+      if (c.type === "Foto" || c.type === "Video+Foto") flags.push("Lookbook Foto");
+    }
     if (c.tur === "Editorial") flags.push("Editorial");
     if (c.tur === "Creative") flags.push("Creative");
     if (c.category === "Epoksi") {
@@ -1177,17 +1432,18 @@ function renderProducts() {
 
 function renderProductStats(catMap) {
   const total = state.products.length;
-  const counts = { Lookbook: 0, Editorial: 0, Creative: 0, "Epoksi Video": 0, "Epoksi Foto": 0 };
+  const counts = { "Lookbook Video": 0, "Lookbook Foto": 0, Editorial: 0, Creative: 0, "Epoksi Video": 0, "Epoksi Foto": 0 };
   for (const pid in catMap) {
     for (const flag of PRODUCT_FLAGS) if (catMap[pid][flag].length > 0) counts[flag]++;
   }
   document.getElementById("product-stats").innerHTML = `
     <div class="stat-card"><div class="label">Toplam ürün</div><div class="value">${total}</div></div>
-    <div class="stat-card"><div class="label">Lookbook</div><div class="value">${counts.Lookbook}<small> / ${total}</small></div></div>
+    <div class="stat-card"><div class="label">Lookbook V</div><div class="value">${counts["Lookbook Video"]}<small> / ${total}</small></div></div>
+    <div class="stat-card"><div class="label">Lookbook F</div><div class="value">${counts["Lookbook Foto"]}<small> / ${total}</small></div></div>
     <div class="stat-card"><div class="label">Editorial</div><div class="value">${counts.Editorial}<small> / ${total}</small></div></div>
     <div class="stat-card"><div class="label">Creative</div><div class="value">${counts.Creative}<small> / ${total}</small></div></div>
-    <div class="stat-card"><div class="label">Epoksi Video</div><div class="value">${counts["Epoksi Video"]}<small> / ${total}</small></div></div>
-    <div class="stat-card"><div class="label">Epoksi Foto</div><div class="value">${counts["Epoksi Foto"]}<small> / ${total}</small></div></div>
+    <div class="stat-card"><div class="label">Epoksi V</div><div class="value">${counts["Epoksi Video"]}<small> / ${total}</small></div></div>
+    <div class="stat-card"><div class="label">Epoksi F</div><div class="value">${counts["Epoksi Foto"]}<small> / ${total}</small></div></div>
   `;
 }
 
@@ -1203,11 +1459,13 @@ function renderContent() {
     return `
       <tr class="${rowClass}">
         <td class="num">${idx + 1}</td>
-        <td><input type="number" value="${c.duration ?? 25}" min="0" data-field="duration" data-id="${c.id}" data-collection="content" data-type="number" /></td>
+        <td class="status-cell">
+          <input type="checkbox" class="status-checkbox" data-field="status" data-id="${c.id}" data-collection="content" ${c.status === "Çekildi" ? "checked" : ""} title="Çekildi" />
+        </td>
+        <td class="num-cell"><input type="number" value="${c.duration ?? 25}" min="0" data-field="duration" data-id="${c.id}" data-collection="content" data-type="number" /></td>
         <td>${renderRefsCell(c)}</td>
         <td><textarea data-field="concept" data-id="${c.id}" data-collection="content" rows="1">${escapeHtml(c.concept)}</textarea></td>
         <td><textarea data-field="description" data-id="${c.id}" data-collection="content" rows="1">${escapeHtml(c.description)}</textarea></td>
-        <td><textarea data-field="technical" data-id="${c.id}" data-collection="content" rows="1">${escapeHtml(c.technical)}</textarea></td>
         <td>
           <select data-field="type" data-id="${c.id}" data-collection="content">
             <option value="">—</option>
@@ -1220,12 +1478,6 @@ function renderContent() {
             ${TUR.map(t => `<option value="${t}" ${c.tur === t ? "selected" : ""}>${t}</option>`).join("")}
           </select>
         </td>
-        <td>
-          <select data-field="orientation" data-id="${c.id}" data-collection="content">
-            <option value="">—</option>
-            ${ORIENTATIONS.map(o => `<option value="${o}" ${c.orientation === o ? "selected" : ""}>${o}</option>`).join("")}
-          </select>
-        </td>
         <td>${renderProductPicker(c)}</td>
         <td>
           <select data-field="category" data-id="${c.id}" data-collection="content">
@@ -1233,20 +1485,19 @@ function renderContent() {
             ${CATEGORIES.map(cat => `<option value="${cat}" ${c.category === cat ? "selected" : ""}>${cat}</option>`).join("")}
           </select>
         </td>
-        <td><textarea data-field="responsible" data-id="${c.id}" data-collection="content" rows="1">${escapeHtml(c.responsible)}</textarea></td>
-        <td>
-          <select data-field="status" data-id="${c.id}" data-collection="content">
-            ${STATUSES.map(s => `<option value="${s}" ${c.status === s ? "selected" : ""}>${s}</option>`).join("")}
-          </select>
-        </td>
+        <td>${renderResponsiblePicker(c)}</td>
         <td><textarea data-field="editNote" data-id="${c.id}" data-collection="content" rows="1">${escapeHtml(c.editNote)}</textarea></td>
-        <td class="center"><button class="btn-danger" data-delete-content="${c.id}" title="Sil">×</button></td>
+        <td class="center">
+          <button class="btn-duplicate" data-duplicate-content="${c.id}" title="Çoğalt">+</button>
+          <button class="btn-danger" data-delete-content="${c.id}" title="Sil">×</button>
+        </td>
       </tr>
     `;
   }).join("");
 
   renderContentStats();
   autoGrowAll(tbody);
+  observeTextareas(tbody);
 }
 
 function renderRefsCell(content) {
@@ -1262,7 +1513,7 @@ function renderRefsCell(content) {
       ${thumbs}
       <label class="ref-upload" title="Referans görsel ekle">
         <input type="file" accept="image/*" multiple data-ref-upload="${content.id}" style="display:none" />
-        <span>+ Görsel</span>
+        <span>+</span>
       </label>
     </div>
   `;
@@ -1272,7 +1523,10 @@ function renderProductPicker(content) {
   const selected = (content.productIds || [])
     .map(pid => state.products.find(p => p.id === pid)).filter(Boolean);
   const chips = selected.length
-    ? selected.map(p => `<span class="chip">${escapeHtml(p.model)} · ${escapeHtml(p.color)}</span>`).join("")
+    ? selected.map(p => {
+        const full = `${p.model} · ${p.color}`;
+        return `<span class="chip" title="${escapeHtml(full)}">${escapeHtml(full)}</span>`;
+      }).join("")
     : `<span class="placeholder">Ürün seç…</span>`;
   return `
     <div class="product-picker" data-picker-content="${content.id}">
@@ -1282,6 +1536,33 @@ function renderProductPicker(content) {
           <input type="text" placeholder="Ara: model veya renk" data-picker-search="${content.id}" />
         </div>
         ${renderPickerOptions(content)}
+      </div>
+    </div>
+  `;
+}
+
+function getResponsibles(c) {
+  if (Array.isArray(c.responsible)) return c.responsible;
+  if (typeof c.responsible === "string" && c.responsible) return [c.responsible];
+  return [];
+}
+
+function renderResponsiblePicker(content) {
+  const selected = getResponsibles(content);
+  const chips = selected.length
+    ? selected.map(name => `<span class="chip" title="${escapeHtml(name)}">${escapeHtml(name)}</span>`).join("")
+    : `<span class="placeholder">Seç…</span>`;
+  return `
+    <div class="product-picker" data-resp-content="${content.id}">
+      <div class="picker-display" data-resp-toggle="${content.id}">${chips}</div>
+      <div class="picker-dropdown" data-resp-dropdown="${content.id}">
+        ${RESPONSIBLES.map(name => `
+          <label class="picker-option">
+            <input type="checkbox" data-resp-select="${content.id}" data-resp-name="${escapeHtml(name)}"
+                   ${selected.includes(name) ? "checked" : ""} />
+            <span>${escapeHtml(name)}</span>
+          </label>
+        `).join("")}
       </div>
     </div>
   `;
@@ -1335,6 +1616,10 @@ document.querySelectorAll("nav button").forEach(btn => {
     document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
     btn.classList.add("active");
     document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
+    // Re-grow textareas when their tab becomes visible (scrollHeight is wrong when hidden)
+    if (btn.dataset.tab === "content") {
+      requestAnimationFrame(() => autoGrowAll(document.getElementById("content-tbody")));
+    }
   });
 });
 
@@ -1346,6 +1631,7 @@ function bindFieldUpdate(container) {
     const t = e.target;
     if (!t.dataset.id || !t.dataset.field) return;
     if (t.tagName === "SELECT") return; // selects handled below
+    if (t.type === "checkbox") return; // checkboxes handled by change event
     const coll = t.dataset.collection;
     let value = t.value;
     if (t.dataset.type === "number") value = Number(value) || 0;
@@ -1356,7 +1642,13 @@ function bindFieldUpdate(container) {
   container.addEventListener("change", (e) => {
     const t = e.target;
     if (!t.dataset.id || !t.dataset.field) return;
-    if (t.tagName !== "SELECT") return; // only handle selects here
+    // Status checkbox: checked = Çekildi, unchecked = Planlandı
+    if (t.type === "checkbox" && t.dataset.field === "status") {
+      const status = t.checked ? "Çekildi" : "Planlandı";
+      updateContentField(t.dataset.id, "status", status);
+      return;
+    }
+    if (t.tagName !== "SELECT") return;
     const coll = t.dataset.collection;
     if (coll === "products") updateProductField(t.dataset.id, t.dataset.field, t.value);
     else if (coll === "content") updateContentField(t.dataset.id, t.dataset.field, t.value);
@@ -1405,6 +1697,13 @@ document.getElementById("content-tbody").addEventListener("click", (e) => {
   deleteContentRow(id).then(() => toast("İçerik silindi"));
 });
 
+// Content duplicate
+document.getElementById("content-tbody").addEventListener("click", (e) => {
+  const id = e.target.dataset.duplicateContent;
+  if (!id) return;
+  duplicateContentRow(id).then(() => toast("İçerik çoğaltıldı"));
+});
+
 // Add content
 document.getElementById("btn-add-content").addEventListener("click", () => {
   addContentRow().then(() => toast("İçerik satırı eklendi"));
@@ -1412,6 +1711,7 @@ document.getElementById("btn-add-content").addEventListener("click", () => {
 
 // === Product picker ===
 document.addEventListener("click", (e) => {
+  // Product picker toggle
   const toggleId = e.target.closest("[data-picker-toggle]")?.dataset?.pickerToggle;
   if (toggleId) {
     document.querySelectorAll(".picker-dropdown.open").forEach(d => {
@@ -1424,13 +1724,26 @@ document.addEventListener("click", (e) => {
     document.querySelector(`[data-picker-dropdown="${toggleId}"]`)?.classList.toggle("open");
     return;
   }
+  // Responsible picker toggle
+  const respId = e.target.closest("[data-resp-toggle]")?.dataset?.respToggle;
+  if (respId) {
+    document.querySelectorAll(".picker-dropdown.open").forEach(d => {
+      if (d.dataset.respDropdown !== respId) d.classList.remove("open");
+    });
+    document.querySelectorAll(".picker-display.open").forEach(d => {
+      if (d.dataset.respToggle !== respId) d.classList.remove("open");
+    });
+    document.querySelector(`[data-resp-toggle="${respId}"]`)?.classList.toggle("open");
+    document.querySelector(`[data-resp-dropdown="${respId}"]`)?.classList.toggle("open");
+    return;
+  }
   if (!e.target.closest(".product-picker")) {
     document.querySelectorAll(".picker-dropdown.open").forEach(d => d.classList.remove("open"));
     document.querySelectorAll(".picker-display.open").forEach(d => d.classList.remove("open"));
   }
 });
 
-// Picker checkbox toggle
+// Picker checkbox toggle (products)
 document.getElementById("content-tbody").addEventListener("change", async (e) => {
   const t = e.target;
   if (!t.dataset.pickerSelect) return;
@@ -1445,6 +1758,23 @@ document.getElementById("content-tbody").addEventListener("change", async (e) =>
     newIds = newIds.filter(id => id !== productId);
   }
   await updateContentField(contentId, "productIds", newIds);
+});
+
+// Responsible picker selection
+document.getElementById("content-tbody").addEventListener("change", async (e) => {
+  const t = e.target;
+  if (!t.dataset.respSelect) return;
+  const contentId = t.dataset.respSelect;
+  const name = t.dataset.respName;
+  const c = state.content.find(c => c.id === contentId);
+  if (!c) return;
+  let current = getResponsibles(c);
+  if (t.checked) {
+    if (!current.includes(name)) current = [...current, name];
+  } else {
+    current = current.filter(n => n !== name);
+  }
+  await updateContentField(contentId, "responsible", current);
 });
 
 // Picker search
@@ -1550,6 +1880,25 @@ document.getElementById("btn-export").addEventListener("click", () => {
 // === Online/offline indicator ===
 window.addEventListener("online", () => setSyncStatus("ok"));
 window.addEventListener("offline", () => setSyncStatus("error"));
+
+// ============================================================
+// COLUMN RESIZE — initialize after DOM is ready
+// ============================================================
+applyStoredColWidths("content-table");
+applyStoredColWidths("product-table");
+setupColumnResize("content-table");
+setupColumnResize("product-table");
+
+document.getElementById("btn-reset-cols-content").addEventListener("click", () => {
+  if (confirm("İçerik takibi sütun genişlikleri varsayılana dönecek. Devam edilsin mi?")) {
+    resetColWidths("content-table");
+  }
+});
+document.getElementById("btn-reset-cols-product").addEventListener("click", () => {
+  if (confirm("Ürün takibi sütun genişlikleri varsayılana dönecek. Devam edilsin mi?")) {
+    resetColWidths("product-table");
+  }
+});
 
 </script>
 
