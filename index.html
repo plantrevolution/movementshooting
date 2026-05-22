@@ -1,0 +1,1557 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PREV — Çekim Planlama</title>
+<style>
+  :root {
+    --bg: #e5e5e5;
+    --card: #ffffff;
+    --sage: #5a7a5e;
+    --sage-dark: #000000;
+    --sage-light: #e8ede2;
+    --cream: #f4f1e8;
+    --beige: #f0e8dc;
+    --text: #1a2920;
+    --text-muted: #6b7568;
+    --border: #c8c8c8;
+    --border-soft: #dedede;
+    --danger: #b85c5c;
+    --warning: #c89456;
+    --success: #5a7a5e;
+    --row-done: #d9ecd0;
+    --row-done-hover: #cce4c0;
+    --row-cancel: #f5d4d4;
+    --row-cancel-hover: #f0c4c4;
+    --radius: 8px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--sage-dark);
+    color: #fff;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow-md);
+  }
+  header h1 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  header h1 span { opacity: 0.6; font-weight: 400; margin-left: 4px; font-size: 14px; }
+  .sync-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #6acf6a;
+    box-shadow: 0 0 8px rgba(106,207,106,0.6);
+    transition: background 0.2s;
+  }
+  .sync-dot.saving { background: #f4c542; }
+  .sync-dot.error { background: #e35858; }
+
+  nav { display: flex; gap: 4px; }
+  nav button {
+    background: transparent;
+    color: rgba(255,255,255,0.7);
+    border: none;
+    padding: 8px 16px;
+    cursor: pointer;
+    border-radius: var(--radius);
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.15s;
+  }
+  nav button:hover { background: rgba(255,255,255,0.08); color: #fff; }
+  nav button.active { background: rgba(255,255,255,0.15); color: #fff; }
+
+  .actions { display: flex; gap: 8px; }
+  .actions button {
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.2);
+    padding: 7px 14px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.15s;
+  }
+  .actions button:hover { background: rgba(255,255,255,0.2); }
+
+  main { padding: 24px; max-width: 1800px; margin: 0 auto; }
+  .tab { display: none; }
+  .tab.active { display: block; }
+
+  .stats {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius);
+    padding: 12px 18px;
+    box-shadow: var(--shadow);
+    min-width: 120px;
+  }
+  .stat-card .label {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+  .stat-card .value {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--sage-dark);
+  }
+  .stat-card .value small { font-size: 13px; color: var(--text-muted); font-weight: 400; }
+
+  .table-wrapper {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius);
+    overflow: auto;
+    box-shadow: var(--shadow);
+    max-height: calc(100vh - 280px);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  #content-table {
+    table-layout: fixed;
+    width: max-content;
+    min-width: 100%;
+  }
+  thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--sage-dark);
+  }
+  th {
+    color: #fff;
+    text-align: left;
+    padding: 12px 10px;
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.3px;
+    border-right: 1px solid rgba(255,255,255,0.1);
+    white-space: nowrap;
+  }
+  th:last-child { border-right: none; }
+
+  td {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border-soft);
+    border-right: 1px solid var(--border-soft);
+    vertical-align: middle;
+  }
+  td:last-child { border-right: none; }
+  tbody tr:hover { background: var(--cream); }
+  tbody tr.row-done { background: var(--row-done); }
+  tbody tr.row-done:hover { background: var(--row-done-hover); }
+  tbody tr.row-cancel { background: var(--row-cancel); }
+  tbody tr.row-cancel:hover { background: var(--row-cancel-hover); }
+
+  td input[type="text"], td input[type="number"], td select, td textarea {
+    width: 100%;
+    border: 1px solid transparent;
+    background: transparent;
+    padding: 5px 6px;
+    border-radius: 4px;
+    font: inherit;
+    color: var(--text);
+    transition: border-color 0.15s;
+  }
+  td input:focus, td select:focus, td textarea:focus {
+    outline: none;
+    border-color: var(--sage);
+    background: #fff;
+  }
+  td input:hover, td select:hover, td textarea:hover {
+    border-color: var(--border);
+  }
+  td textarea {
+    resize: none;
+    min-height: 32px;
+    font-family: inherit;
+    overflow-y: hidden;
+    line-height: 1.4;
+  }
+
+  td.num { text-align: center; color: var(--text-muted); font-weight: 600; width: 40px; }
+  td.center { text-align: center; }
+
+  /* Reference photos */
+  .ref-cell {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+    min-width: 130px;
+  }
+  .ref-thumb {
+    position: relative;
+    width: 44px;
+    height: 44px;
+    border-radius: 4px;
+    overflow: hidden;
+    cursor: zoom-in;
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+    background: #f0f0f0;
+  }
+  .ref-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .ref-thumb .ref-delete {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: rgba(0,0,0,0.65);
+    color: #fff;
+    border: none;
+    width: 16px;
+    height: 16px;
+    font-size: 11px;
+    line-height: 1;
+    cursor: pointer;
+    border-radius: 0 0 0 4px;
+    padding: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+  .ref-thumb:hover .ref-delete { display: flex; }
+  .ref-thumb.uploading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--cream);
+    cursor: default;
+  }
+  .ref-thumb.uploading::after {
+    content: "";
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border);
+    border-top-color: var(--sage);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  .ref-upload {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 10px;
+    font-size: 11px;
+    color: var(--text-muted);
+    background: #fff;
+    border: 1px dashed var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .ref-upload:hover {
+    background: var(--cream);
+    border-color: var(--sage);
+    color: var(--sage-dark);
+  }
+
+  /* Image viewer */
+  .image-viewer { max-width: 92vw; max-height: 92vh; position: relative; }
+  .image-viewer img {
+    max-width: 92vw; max-height: 92vh;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-md);
+    display: block;
+  }
+  .image-close {
+    position: absolute; top: -14px; right: -14px;
+    background: #fff;
+    border: 1px solid var(--border);
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 20px; line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: var(--shadow-md);
+    color: var(--text);
+  }
+  .image-close:hover { background: var(--cream); }
+
+  /* Product picker */
+  .product-picker { position: relative; min-width: 200px; }
+  .picker-display {
+    min-height: 32px;
+    padding: 4px 6px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+  }
+  .picker-display:hover { border-color: var(--border); background: #fff; }
+  .picker-display.open { border-color: var(--sage); background: #fff; }
+  .picker-display .placeholder { color: var(--text-muted); font-style: italic; font-size: 12px; }
+  .chip {
+    background: var(--sage-light);
+    color: var(--sage-dark);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .picker-dropdown {
+    position: absolute;
+    top: 100%; left: 0;
+    margin-top: 4px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-md);
+    max-height: 320px;
+    overflow-y: auto;
+    z-index: 50;
+    min-width: 280px;
+    display: none;
+  }
+  .picker-dropdown.open { display: block; }
+  .picker-search {
+    padding: 8px;
+    border-bottom: 1px solid var(--border-soft);
+    position: sticky;
+    top: 0;
+    background: #fff;
+  }
+  .picker-search input {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 13px;
+  }
+  .picker-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  .picker-option:hover { background: var(--cream); }
+  .picker-option input { margin: 0; }
+  .picker-option .color { color: var(--text-muted); }
+  .picker-group {
+    padding: 4px 10px;
+    background: var(--cream);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--sage-dark);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    position: sticky;
+    top: 47px;
+  }
+
+  .check-cell { text-align: center; width: 90px; }
+  .check {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border: 2px solid var(--border);
+    border-radius: 5px;
+    cursor: default;
+    background: #fff;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .check.checked { background: var(--sage); border-color: var(--sage); }
+  .check.checked::after { content: "✓"; }
+  .check[title] { cursor: help; }
+
+  .btn {
+    background: var(--sage); color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 13px; font-weight: 500;
+    transition: all 0.15s;
+  }
+  .btn:hover { background: var(--sage-dark); }
+  .btn-secondary { background: #fff; color: var(--sage-dark); border: 1px solid var(--border); }
+  .btn-secondary:hover { background: var(--cream); }
+  .btn-danger {
+    background: transparent; color: var(--danger);
+    border: 1px solid transparent;
+    padding: 4px 8px; cursor: pointer; border-radius: 4px;
+    font-size: 16px;
+  }
+  .btn-danger:hover { background: #f7d4d4; }
+
+  .toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    gap: 12px;
+  }
+  .toolbar-left { display: flex; gap: 8px; align-items: center; }
+
+  .helper {
+    background: var(--sage-light);
+    color: var(--sage-dark);
+    padding: 12px 16px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    margin-bottom: 16px;
+    border-left: 3px solid var(--sage);
+  }
+  .helper strong { font-weight: 600; }
+
+  /* Banner for initial setup / migration */
+  .banner {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--warning);
+    padding: 16px 20px;
+    border-radius: var(--radius);
+    margin-bottom: 20px;
+    box-shadow: var(--shadow);
+  }
+  .banner h3 { margin: 0 0 8px 0; font-size: 16px; color: var(--text); }
+  .banner p { margin: 0 0 12px 0; color: var(--text-muted); font-size: 13px; }
+  .banner-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  /* Modal */
+  .modal-bg {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.4);
+    display: none;
+    align-items: center; justify-content: center;
+    z-index: 200;
+  }
+  .modal-bg.open { display: flex; }
+  .modal {
+    background: #fff;
+    border-radius: var(--radius);
+    padding: 24px;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: var(--shadow-md);
+  }
+  .modal h3 { margin-top: 0; color: var(--sage-dark); }
+  .modal label { display: block; margin-bottom: 12px; font-size: 13px; font-weight: 500; }
+  .modal label input {
+    width: 100%;
+    padding: 8px 10px;
+    margin-top: 4px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 14px;
+  }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+
+  /* Loading overlay */
+  .loading-overlay {
+    position: fixed; inset: 0;
+    background: rgba(229,229,229,0.96);
+    display: none;
+    flex-direction: column;
+    align-items: center; justify-content: center;
+    z-index: 500;
+    gap: 16px;
+  }
+  .loading-overlay.active { display: flex; }
+  .loading-spinner {
+    width: 40px; height: 40px;
+    border: 3px solid var(--border);
+    border-top-color: var(--sage-dark);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  .loading-text { color: var(--text-muted); font-size: 14px; }
+
+  .toast {
+    position: fixed;
+    bottom: 24px; right: 24px;
+    background: var(--sage-dark);
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-md);
+    z-index: 300;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.25s;
+    pointer-events: none;
+    max-width: 360px;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  @media (max-width: 768px) {
+    header { flex-direction: column; align-items: flex-start; padding: 12px 16px; gap: 12px; }
+    main { padding: 12px; }
+    .table-wrapper { max-height: calc(100vh - 320px); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>
+      <span class="sync-dot" id="sync-dot" title="Bağlantı durumu"></span>
+      PREV <span>· Çekim Planlama</span>
+    </h1>
+  </div>
+  <nav>
+    <button data-tab="products" class="active">Ürün Takip</button>
+    <button data-tab="content">İçerik Takip</button>
+  </nav>
+  <div class="actions">
+    <button id="btn-export">Yedek Al</button>
+  </div>
+</header>
+
+<main>
+
+  <div id="setup-banner-container"></div>
+
+  <!-- ÜRÜN TAKİP -->
+  <section class="tab active" id="tab-products">
+    <div class="helper">
+      <strong>Ürün listesi.</strong> Buradaki ürünler "İçerik Takip" sekmesinde Ürün(ler) hücresinin seçeneklerini besler.
+      Checkbox'lar, içerik <strong>"Çekildi"</strong> olarak işaretlendiğinde otomatik dolar — sadece tamamlanmış çekimler sayılır, planlananlar değil.
+      Tüm değişiklikler ekibin diğer üyelerinin ekranına anında yansır.
+    </div>
+
+    <div class="stats" id="product-stats"></div>
+
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <button class="btn" id="btn-add-product">+ Ürün ekle</button>
+      </div>
+    </div>
+
+    <div class="table-wrapper">
+      <table id="product-table">
+        <thead>
+          <tr>
+            <th style="width: 100px;">Model</th>
+            <th style="width: 150px;">Renk</th>
+            <th class="check-cell">Lookbook</th>
+            <th class="check-cell">Editorial</th>
+            <th class="check-cell">Creative</th>
+            <th class="check-cell">Epoksi Video</th>
+            <th class="check-cell">Epoksi Foto</th>
+            <th style="width: 50px;"></th>
+          </tr>
+        </thead>
+        <tbody id="product-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- İÇERİK TAKİP -->
+  <section class="tab" id="tab-content">
+    <div class="helper">
+      <strong>İçerik takip.</strong> Her satır bir içerik. Tüm değişiklikler ekiple gerçek zamanlı paylaşılır.
+      Metin alanları hücreden çıktığında kaydedilir; dropdown'lar ve fotoğraflar anında.
+    </div>
+
+    <div class="stats" id="content-stats"></div>
+
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <button class="btn" id="btn-add-content">+ İçerik ekle</button>
+      </div>
+    </div>
+
+    <div class="table-wrapper">
+      <table id="content-table">
+        <thead>
+          <tr>
+            <th style="width: 40px;">#</th>
+            <th style="width: 70px;">Süre (dk)</th>
+            <th style="width: 140px;">Referans</th>
+            <th style="width: 200px;">İçerik fikri / konsept</th>
+            <th style="width: 200px;">İçerik açıklaması</th>
+            <th style="width: 200px;">Teknik detay</th>
+            <th style="width: 110px;">Video / Foto</th>
+            <th style="width: 130px;">Tür</th>
+            <th style="width: 100px;">Yatay/Dikey</th>
+            <th style="width: 220px;">Ürün(ler)</th>
+            <th style="width: 130px;">Stüdyo / Epoksi</th>
+            <th style="width: 130px;">Sorumlu</th>
+            <th style="width: 130px;">Durum</th>
+            <th style="width: 200px;">Edit notu</th>
+            <th style="width: 50px;"></th>
+          </tr>
+        </thead>
+        <tbody id="content-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<!-- Add Product Modal -->
+<div class="modal-bg" id="modal-product">
+  <div class="modal">
+    <h3>Ürün ekle</h3>
+    <label>Model
+      <input type="text" id="new-product-model" placeholder="Örn: Jane" />
+    </label>
+    <label>Renk
+      <input type="text" id="new-product-color" placeholder="Örn: Black" />
+    </label>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" data-close-modal>Vazgeç</button>
+      <button class="btn" id="confirm-add-product">Ekle</button>
+    </div>
+  </div>
+</div>
+
+<!-- Image viewer modal -->
+<div class="modal-bg" id="modal-image">
+  <div class="image-viewer">
+    <button class="image-close" id="image-close" title="Kapat">×</button>
+    <img id="image-viewer-img" alt="Referans görsel" />
+  </div>
+</div>
+
+<!-- Loading overlay -->
+<div class="loading-overlay active" id="loading-overlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text" id="loading-text">Firebase'e bağlanılıyor…</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+import {
+  getFirestore, collection, doc, addDoc, setDoc, updateDoc, deleteDoc,
+  onSnapshot, query, orderBy, serverTimestamp, writeBatch, getDocs
+} from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+import {
+  getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject
+} from "https://www.gstatic.com/firebasejs/10.13.2/firebase-storage.js";
+
+// ============================================================
+// FIREBASE INIT
+// ============================================================
+const firebaseConfig = {
+  apiKey: "AIzaSyAuOYieg62fnoD6FVVSKhKdTFqdz417bos",
+  authDomain: "prev-movementshooting.firebaseapp.com",
+  projectId: "prev-movementshooting",
+  storageBucket: "prev-movementshooting.firebasestorage.app",
+  messagingSenderId: "811815748627",
+  appId: "1:811815748627:web:179b641760d3c09715ebe6"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const storage = getStorage(app);
+
+const productsCol = collection(db, "products");
+const contentCol = collection(db, "content");
+
+// ============================================================
+// CONSTANTS
+// ============================================================
+const INITIAL_PRODUCTS = [
+  { model: "Jane", color: "Black" }, { model: "Jane", color: "Cherry Brownie" },
+  { model: "Jane", color: "Olea" }, { model: "Jane", color: "Cherry" },
+  { model: "Jane", color: "Naia" },
+  { model: "Joan", color: "Midnight" }, { model: "Joan", color: "Brownie" },
+  { model: "Joan", color: "Dark Burgundy" }, { model: "Joan", color: "Deep Plum" },
+  { model: "Joan", color: "Olea" },
+  { model: "Julia", color: "Black" }, { model: "Julia", color: "Champagne" },
+  { model: "Julia", color: "Sienna" }, { model: "Julia", color: "Ash" },
+  { model: "Lou", color: "Black" }, { model: "Lou", color: "Kahve Süet" },
+  { model: "Lou", color: "Tütün Süet" }, { model: "Lou", color: "Bristol" },
+  { model: "Mae", color: "Black" }, { model: "Mae", color: "Olea" },
+  { model: "Mae", color: "Naia" }, { model: "Mae", color: "Kahve Süet" },
+  { model: "Rosa", color: "Black" }, { model: "Rosa", color: "Brownie" },
+  { model: "Rosa", color: "Cherry" }, { model: "Rosa", color: "Olea" },
+];
+const INITIAL_CONTENT_DURATIONS = [20,25,25,25,25,25,20,20,25,25,25,25,25,15,15,15,15,15,15];
+const CATEGORIES = ["Stüdyo", "Epoksi"];
+const TUR = ["Editorial", "Lookbook", "Creative"];
+const TYPES = ["Video", "Foto", "Video+Foto"];
+const ORIENTATIONS = ["Dikey", "Yatay", "Kare"];
+const STATUSES = ["Planlandı", "Çekildi", "Tekrar", "İptal"];
+
+// Product checkbox columns — kept for product list (5 columns)
+const PRODUCT_FLAGS = ["Lookbook", "Editorial", "Creative", "Epoksi Video", "Epoksi Foto"];
+
+const LEGACY_KEY = "prev-cekim-planlama-v1";
+
+// ============================================================
+// STATE
+// ============================================================
+const state = { products: [], content: [] };
+let snapshotsReceived = { products: false, content: false };
+let initialChecked = false;
+let pendingWrites = 0;
+
+// ============================================================
+// HELPERS
+// ============================================================
+function escapeHtml(str) {
+  if (str == null) return "";
+  return String(str)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}
+
+function toast(msg, ms = 2200) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => t.classList.remove("show"), ms);
+}
+
+function setSyncStatus(s) {
+  const dot = document.getElementById("sync-dot");
+  dot.classList.remove("saving", "error");
+  if (s === "saving") dot.classList.add("saving");
+  else if (s === "error") dot.classList.add("error");
+  if (s === "saving") dot.title = "Kaydediliyor…";
+  else if (s === "error") dot.title = "Bağlantı hatası";
+  else dot.title = "Senkronize";
+}
+
+async function trackWrite(promise) {
+  pendingWrites++;
+  setSyncStatus("saving");
+  try {
+    await promise;
+  } catch (err) {
+    console.error("Write failed:", err);
+    setSyncStatus("error");
+    toast("Kaydedilemedi: " + err.message);
+    throw err;
+  } finally {
+    pendingWrites--;
+    if (pendingWrites === 0) setSyncStatus("ok");
+  }
+}
+
+function resizeImageToBlob(file, maxDim = 1200, quality = 0.82) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Dosya okunamadı"));
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("Görsel yüklenemedi"));
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let { width, height } = img;
+        if (width > height && width > maxDim) {
+          height = Math.round((height * maxDim) / width);
+          width = maxDim;
+        } else if (height > maxDim) {
+          width = Math.round((width * maxDim) / height);
+          height = maxDim;
+        }
+        canvas.width = width; canvas.height = height;
+        canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+        canvas.toBlob(
+          (blob) => blob ? resolve(blob) : reject(new Error("Sıkıştırma hatası")),
+          "image/jpeg", quality
+        );
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function dataUrlToBlob(dataUrl) {
+  return fetch(dataUrl).then(r => r.blob());
+}
+
+// Auto-resize textarea to fit content
+function autoGrowTextarea(ta) {
+  ta.style.height = "auto";
+  ta.style.height = (ta.scrollHeight + 2) + "px";
+}
+
+function autoGrowAll(container) {
+  container.querySelectorAll("textarea").forEach(autoGrowTextarea);
+}
+
+// Focus preservation across re-renders
+function preserveFocus(renderFn) {
+  const active = document.activeElement;
+  const activeId = active?.dataset?.id;
+  const activeField = active?.dataset?.field;
+  const activeValue = (active && ("value" in active)) ? active.value : null;
+  const selStart = active?.selectionStart;
+  const selEnd = active?.selectionEnd;
+  const tableWrappers = document.querySelectorAll(".table-wrapper");
+  const scrolls = Array.from(tableWrappers).map(w => ({ el: w, top: w.scrollTop, left: w.scrollLeft }));
+
+  renderFn();
+
+  if (activeId && activeField) {
+    const newEl = document.querySelector(`[data-id="${activeId}"][data-field="${activeField}"]`);
+    if (newEl) {
+      if (activeValue !== null && newEl.value !== activeValue) {
+        newEl.value = activeValue;
+      }
+      try { newEl.focus(); } catch (e) {}
+      try { if (selStart != null) newEl.setSelectionRange(selStart, selEnd); } catch (e) {}
+    }
+  }
+  scrolls.forEach(({ el, top, left }) => { el.scrollTop = top; el.scrollLeft = left; });
+}
+
+// ============================================================
+// FIRESTORE SUBSCRIPTIONS
+// ============================================================
+onSnapshot(query(productsCol, orderBy("order")), (snap) => {
+  state.products = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  snapshotsReceived.products = true;
+  checkInitial();
+  if (initialChecked) preserveFocus(() => { renderProducts(); renderContent(); });
+}, (err) => {
+  console.error("Products subscription error:", err);
+  setSyncStatus("error");
+  document.getElementById("loading-text").textContent = "Bağlantı hatası: " + err.message;
+});
+
+onSnapshot(query(contentCol, orderBy("order")), (snap) => {
+  state.content = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  snapshotsReceived.content = true;
+  checkInitial();
+  if (initialChecked) preserveFocus(() => { renderContent(); renderProducts(); });
+}, (err) => {
+  console.error("Content subscription error:", err);
+  setSyncStatus("error");
+});
+
+function checkInitial() {
+  if (initialChecked) return;
+  if (!snapshotsReceived.products || !snapshotsReceived.content) return;
+  initialChecked = true;
+  document.getElementById("loading-overlay").classList.remove("active");
+
+  const isEmpty = state.products.length === 0 && state.content.length === 0;
+  if (isEmpty) {
+    showSetupBanner();
+  } else {
+    renderProducts();
+    renderContent();
+  }
+}
+
+// ============================================================
+// SETUP BANNER (first time or empty database)
+// ============================================================
+function showSetupBanner() {
+  const legacyData = (() => {
+    try {
+      const raw = localStorage.getItem(LEGACY_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) { return null; }
+  })();
+
+  const container = document.getElementById("setup-banner-container");
+  container.innerHTML = `
+    <div class="banner">
+      <h3>İlk kurulum</h3>
+      <p>Firestore'da henüz veri yok. Nasıl başlamak istersin?</p>
+      <div class="banner-actions">
+        <button class="btn" id="seed-default">Excel verisiyle başla (26 ürün + 19 içerik satırı)</button>
+        ${legacyData ? `<button class="btn btn-secondary" id="migrate-local">Bu tarayıcıdaki eski veriyi al</button>` : ""}
+        <button class="btn btn-secondary" id="seed-empty">Boş başla</button>
+      </div>
+    </div>
+  `;
+
+  document.getElementById("seed-default").onclick = () => seedDefault();
+  document.getElementById("seed-empty").onclick = () => { container.innerHTML = ""; renderProducts(); renderContent(); };
+  if (legacyData) {
+    document.getElementById("migrate-local").onclick = () => migrateLocal(legacyData);
+  }
+}
+
+function hideSetupBanner() {
+  document.getElementById("setup-banner-container").innerHTML = "";
+}
+
+async function seedDefault() {
+  document.getElementById("loading-text").textContent = "Varsayılan veri yükleniyor…";
+  document.getElementById("loading-overlay").classList.add("active");
+  try {
+    const batch = writeBatch(db);
+    INITIAL_PRODUCTS.forEach((p, i) => {
+      const ref = doc(productsCol);
+      batch.set(ref, { model: p.model, color: p.color, order: i + 1, createdAt: serverTimestamp() });
+    });
+    INITIAL_CONTENT_DURATIONS.forEach((d, i) => {
+      const ref = doc(contentCol);
+      batch.set(ref, emptyContent(d, i + 1));
+    });
+    await batch.commit();
+    hideSetupBanner();
+    toast("Varsayılan veri yüklendi");
+  } catch (err) {
+    toast("Hata: " + err.message);
+  } finally {
+    document.getElementById("loading-overlay").classList.remove("active");
+  }
+}
+
+async function migrateLocal(legacyData) {
+  const totalImages = (legacyData.content || []).reduce((sum, c) => sum + (c.refs?.length || 0), 0);
+  document.getElementById("loading-text").textContent = `Veri aktarılıyor… (${totalImages} görsel yüklenecek)`;
+  document.getElementById("loading-overlay").classList.add("active");
+
+  try {
+    // Step 1: products → assign new Firestore IDs, track mapping
+    const productIdMap = {};
+    const productBatch = writeBatch(db);
+    (legacyData.products || []).forEach((p, i) => {
+      const ref = doc(productsCol);
+      productIdMap[p.id] = ref.id;
+      productBatch.set(ref, { model: p.model, color: p.color, order: i + 1, createdAt: serverTimestamp() });
+    });
+    await productBatch.commit();
+
+    // Step 2: content + upload images
+    let imgDone = 0;
+    for (const [i, c] of (legacyData.content || []).entries()) {
+      const contentRef = doc(contentCol);
+      const newRefs = [];
+      for (const oldRef of (c.refs || [])) {
+        // oldRef is a base64 data URL string from old format
+        const dataUrl = typeof oldRef === "string" ? oldRef : oldRef.url;
+        try {
+          const blob = await dataUrlToBlob(dataUrl);
+          const filename = `${crypto.randomUUID()}.jpg`;
+          const path = `refs/${contentRef.id}/${filename}`;
+          const sRef = storageRef(storage, path);
+          await uploadBytes(sRef, blob);
+          const url = await getDownloadURL(sRef);
+          newRefs.push({ url, path });
+          imgDone++;
+          document.getElementById("loading-text").textContent = `Veri aktarılıyor… (${imgDone}/${totalImages} görsel)`;
+        } catch (err) {
+          console.error("Image migrate fail:", err);
+        }
+      }
+      const mappedProductIds = (c.productIds || []).map(oldId => productIdMap[oldId]).filter(Boolean);
+      // Legacy category had 4 values (Lookbook/Editorial/Epoksi Video/Epoksi Foto)
+      // Migrate them to new structure: category=Stüdyo|Epoksi, tur=Editorial|Lookbook, type=Video|Foto
+      let newCategory = "", newTur = "", newType = c.type || "";
+      const legacyCat = c.category || "";
+      if (legacyCat === "Lookbook") { newCategory = "Stüdyo"; newTur = "Lookbook"; }
+      else if (legacyCat === "Editorial") { newCategory = "Stüdyo"; newTur = "Editorial"; }
+      else if (legacyCat === "Epoksi Video") { newCategory = "Epoksi"; newType = newType || "Video"; }
+      else if (legacyCat === "Epoksi Foto") { newCategory = "Epoksi"; newType = newType || "Foto"; }
+      else if (legacyCat === "Stüdyo" || legacyCat === "Epoksi") { newCategory = legacyCat; newTur = c.tur || ""; }
+
+      await setDoc(contentRef, {
+        duration: c.duration ?? 25,
+        concept: c.concept || "",
+        description: c.description || "",
+        technical: c.technical || "",
+        refs: newRefs,
+        type: newType,
+        tur: newTur,
+        orientation: c.orientation || "",
+        productIds: mappedProductIds,
+        category: newCategory,
+        responsible: c.responsible || "",
+        status: c.status || "Planlandı",
+        editNote: c.editNote || "",
+        order: i + 1,
+        createdAt: serverTimestamp(),
+      });
+    }
+
+    // Step 3: clear localStorage to avoid future conflicts
+    localStorage.removeItem(LEGACY_KEY);
+    hideSetupBanner();
+    toast("Eski veri başarıyla aktarıldı");
+  } catch (err) {
+    toast("Aktarım hatası: " + err.message);
+  } finally {
+    document.getElementById("loading-overlay").classList.remove("active");
+  }
+}
+
+function emptyContent(duration, order) {
+  return {
+    duration: duration || 25,
+    concept: "", description: "", technical: "",
+    refs: [],
+    type: "", tur: "", orientation: "",
+    productIds: [], category: "",
+    responsible: "", status: "Planlandı", editNote: "",
+    order,
+    createdAt: serverTimestamp(),
+  };
+}
+
+// ============================================================
+// CRUD OPERATIONS
+// ============================================================
+function updateProductField(id, field, value) {
+  return trackWrite(updateDoc(doc(db, "products", id), { [field]: value }));
+}
+function updateContentField(id, field, value) {
+  return trackWrite(updateDoc(doc(db, "content", id), { [field]: value }));
+}
+
+async function addProduct(model, color) {
+  const maxOrder = state.products.reduce((m, p) => Math.max(m, p.order || 0), 0);
+  return trackWrite(addDoc(productsCol, {
+    model, color, order: maxOrder + 1, createdAt: serverTimestamp()
+  }));
+}
+
+async function deleteProductById(id) {
+  // Remove this product from any content rows
+  const promises = [];
+  for (const c of state.content) {
+    if (c.productIds?.includes(id)) {
+      const newIds = c.productIds.filter(pid => pid !== id);
+      promises.push(updateDoc(doc(db, "content", c.id), { productIds: newIds }));
+    }
+  }
+  promises.push(deleteDoc(doc(db, "products", id)));
+  return trackWrite(Promise.all(promises));
+}
+
+async function addContentRow() {
+  const maxOrder = state.content.reduce((m, c) => Math.max(m, c.order || 0), 0);
+  return trackWrite(addDoc(contentCol, emptyContent(25, maxOrder + 1)));
+}
+
+async function deleteContentRow(id) {
+  const c = state.content.find(c => c.id === id);
+  // Delete refs from Storage first
+  if (c?.refs) {
+    for (const r of c.refs) {
+      if (r.path) {
+        try { await deleteObject(storageRef(storage, r.path)); } catch (e) { /* ignore */ }
+      }
+    }
+  }
+  return trackWrite(deleteDoc(doc(db, "content", id)));
+}
+
+async function uploadContentRef(contentId, file) {
+  if (!file.type.startsWith("image/")) throw new Error("Sadece görsel dosyaları");
+  const blob = await resizeImageToBlob(file);
+  const filename = `${crypto.randomUUID()}.jpg`;
+  const path = `refs/${contentId}/${filename}`;
+  const sRef = storageRef(storage, path);
+  await uploadBytes(sRef, blob);
+  const url = await getDownloadURL(sRef);
+  const c = state.content.find(c => c.id === contentId);
+  const newRefs = [...(c?.refs || []), { url, path }];
+  await updateDoc(doc(db, "content", contentId), { refs: newRefs });
+}
+
+async function deleteContentRef(contentId, refIndex) {
+  const c = state.content.find(c => c.id === contentId);
+  if (!c) return;
+  const r = c.refs[refIndex];
+  if (r?.path) {
+    try { await deleteObject(storageRef(storage, r.path)); } catch (e) {}
+  }
+  const newRefs = c.refs.filter((_, i) => i !== refIndex);
+  return trackWrite(updateDoc(doc(db, "content", contentId), { refs: newRefs }));
+}
+
+// ============================================================
+// RENDER — Products
+// ============================================================
+function getProductCategoryMap() {
+  // Maps each productId → { Lookbook: [rows], Editorial: [rows], Creative: [rows], "Epoksi Video": [rows], "Epoksi Foto": [rows] }
+  // Binding logic:
+  //   product.Lookbook  ← content.tur === "Lookbook"
+  //   product.Editorial ← content.tur === "Editorial"
+  //   product.Creative  ← content.tur === "Creative"
+  //   product.Epoksi Video ← content.category === "Epoksi" && (type Video or Video+Foto)
+  //   product.Epoksi Foto  ← content.category === "Epoksi" && (type Foto or Video+Foto)
+  // IMPORTANT: only content rows with status === "Çekildi" contribute.
+  // Each content row independently contributes — if same product appears in multiple rows
+  // with different tur/category values, multiple checkboxes are marked.
+  const map = {};
+  state.products.forEach(p => {
+    map[p.id] = { Lookbook: [], Editorial: [], Creative: [], "Epoksi Video": [], "Epoksi Foto": [] };
+  });
+  state.content.forEach((c, idx) => {
+    if (c.status !== "Çekildi") return;
+    const flags = [];
+    if (c.tur === "Lookbook") flags.push("Lookbook");
+    if (c.tur === "Editorial") flags.push("Editorial");
+    if (c.tur === "Creative") flags.push("Creative");
+    if (c.category === "Epoksi") {
+      if (c.type === "Video" || c.type === "Video+Foto") flags.push("Epoksi Video");
+      if (c.type === "Foto" || c.type === "Video+Foto") flags.push("Epoksi Foto");
+    }
+    if (!flags.length) return;
+    (c.productIds || []).forEach(pid => {
+      if (!map[pid]) return;
+      flags.forEach(f => map[pid][f].push(idx + 1));
+    });
+  });
+  return map;
+}
+
+function renderProducts() {
+  const tbody = document.getElementById("product-tbody");
+  if (!tbody) return;
+  const catMap = getProductCategoryMap();
+
+  tbody.innerHTML = state.products.map(p => `
+    <tr>
+      <td><input type="text" value="${escapeHtml(p.model)}" data-field="model" data-id="${p.id}" data-collection="products" /></td>
+      <td><input type="text" value="${escapeHtml(p.color)}" data-field="color" data-id="${p.id}" data-collection="products" /></td>
+      ${PRODUCT_FLAGS.map(flag => {
+        const rows = catMap[p.id]?.[flag] || [];
+        const checked = rows.length > 0;
+        const title = checked ? `Çekildi · İçerik #${rows.join(", #")}` : "Bu kategoride henüz çekildi olarak işaretlenmedi";
+        return `<td class="check-cell"><div class="check ${checked ? "checked" : ""}" title="${title}"></div></td>`;
+      }).join("")}
+      <td class="center"><button class="btn-danger" data-delete-product="${p.id}" title="Sil">×</button></td>
+    </tr>
+  `).join("");
+
+  renderProductStats(catMap);
+}
+
+function renderProductStats(catMap) {
+  const total = state.products.length;
+  const counts = { Lookbook: 0, Editorial: 0, Creative: 0, "Epoksi Video": 0, "Epoksi Foto": 0 };
+  for (const pid in catMap) {
+    for (const flag of PRODUCT_FLAGS) if (catMap[pid][flag].length > 0) counts[flag]++;
+  }
+  document.getElementById("product-stats").innerHTML = `
+    <div class="stat-card"><div class="label">Toplam ürün</div><div class="value">${total}</div></div>
+    <div class="stat-card"><div class="label">Lookbook</div><div class="value">${counts.Lookbook}<small> / ${total}</small></div></div>
+    <div class="stat-card"><div class="label">Editorial</div><div class="value">${counts.Editorial}<small> / ${total}</small></div></div>
+    <div class="stat-card"><div class="label">Creative</div><div class="value">${counts.Creative}<small> / ${total}</small></div></div>
+    <div class="stat-card"><div class="label">Epoksi Video</div><div class="value">${counts["Epoksi Video"]}<small> / ${total}</small></div></div>
+    <div class="stat-card"><div class="label">Epoksi Foto</div><div class="value">${counts["Epoksi Foto"]}<small> / ${total}</small></div></div>
+  `;
+}
+
+// ============================================================
+// RENDER — Content
+// ============================================================
+function renderContent() {
+  const tbody = document.getElementById("content-tbody");
+  if (!tbody) return;
+
+  tbody.innerHTML = state.content.map((c, idx) => {
+    const rowClass = c.status === "Çekildi" ? "row-done" : (c.status === "İptal" ? "row-cancel" : "");
+    return `
+      <tr class="${rowClass}">
+        <td class="num">${idx + 1}</td>
+        <td><input type="number" value="${c.duration ?? 25}" min="0" data-field="duration" data-id="${c.id}" data-collection="content" data-type="number" /></td>
+        <td>${renderRefsCell(c)}</td>
+        <td><textarea data-field="concept" data-id="${c.id}" data-collection="content" rows="1">${escapeHtml(c.concept)}</textarea></td>
+        <td><textarea data-field="description" data-id="${c.id}" data-collection="content" rows="1">${escapeHtml(c.description)}</textarea></td>
+        <td><textarea data-field="technical" data-id="${c.id}" data-collection="content" rows="1">${escapeHtml(c.technical)}</textarea></td>
+        <td>
+          <select data-field="type" data-id="${c.id}" data-collection="content">
+            <option value="">—</option>
+            ${TYPES.map(t => `<option value="${t}" ${c.type === t ? "selected" : ""}>${t}</option>`).join("")}
+          </select>
+        </td>
+        <td>
+          <select data-field="tur" data-id="${c.id}" data-collection="content">
+            <option value="">—</option>
+            ${TUR.map(t => `<option value="${t}" ${c.tur === t ? "selected" : ""}>${t}</option>`).join("")}
+          </select>
+        </td>
+        <td>
+          <select data-field="orientation" data-id="${c.id}" data-collection="content">
+            <option value="">—</option>
+            ${ORIENTATIONS.map(o => `<option value="${o}" ${c.orientation === o ? "selected" : ""}>${o}</option>`).join("")}
+          </select>
+        </td>
+        <td>${renderProductPicker(c)}</td>
+        <td>
+          <select data-field="category" data-id="${c.id}" data-collection="content">
+            <option value="">—</option>
+            ${CATEGORIES.map(cat => `<option value="${cat}" ${c.category === cat ? "selected" : ""}>${cat}</option>`).join("")}
+          </select>
+        </td>
+        <td><textarea data-field="responsible" data-id="${c.id}" data-collection="content" rows="1">${escapeHtml(c.responsible)}</textarea></td>
+        <td>
+          <select data-field="status" data-id="${c.id}" data-collection="content">
+            ${STATUSES.map(s => `<option value="${s}" ${c.status === s ? "selected" : ""}>${s}</option>`).join("")}
+          </select>
+        </td>
+        <td><textarea data-field="editNote" data-id="${c.id}" data-collection="content" rows="1">${escapeHtml(c.editNote)}</textarea></td>
+        <td class="center"><button class="btn-danger" data-delete-content="${c.id}" title="Sil">×</button></td>
+      </tr>
+    `;
+  }).join("");
+
+  renderContentStats();
+  autoGrowAll(tbody);
+}
+
+function renderRefsCell(content) {
+  const refs = content.refs || [];
+  const thumbs = refs.map((r, i) => `
+    <div class="ref-thumb" data-content-id="${content.id}" data-ref-index="${i}" title="Tıkla: büyüt">
+      <img src="${r.url}" alt="Referans ${i + 1}" loading="lazy" />
+      <button class="ref-delete" data-ref-delete="${content.id}" data-ref-index="${i}" title="Sil">×</button>
+    </div>
+  `).join("");
+  return `
+    <div class="ref-cell" data-ref-cell="${content.id}">
+      ${thumbs}
+      <label class="ref-upload" title="Referans görsel ekle">
+        <input type="file" accept="image/*" multiple data-ref-upload="${content.id}" style="display:none" />
+        <span>+ Görsel</span>
+      </label>
+    </div>
+  `;
+}
+
+function renderProductPicker(content) {
+  const selected = (content.productIds || [])
+    .map(pid => state.products.find(p => p.id === pid)).filter(Boolean);
+  const chips = selected.length
+    ? selected.map(p => `<span class="chip">${escapeHtml(p.model)} · ${escapeHtml(p.color)}</span>`).join("")
+    : `<span class="placeholder">Ürün seç…</span>`;
+  return `
+    <div class="product-picker" data-picker-content="${content.id}">
+      <div class="picker-display" data-picker-toggle="${content.id}">${chips}</div>
+      <div class="picker-dropdown" data-picker-dropdown="${content.id}">
+        <div class="picker-search">
+          <input type="text" placeholder="Ara: model veya renk" data-picker-search="${content.id}" />
+        </div>
+        ${renderPickerOptions(content)}
+      </div>
+    </div>
+  `;
+}
+
+function renderPickerOptions(content, filter = "") {
+  const grouped = {};
+  for (const p of state.products) {
+    const ok = !filter || p.model.toLowerCase().includes(filter.toLowerCase())
+                       || p.color.toLowerCase().includes(filter.toLowerCase());
+    if (!ok) continue;
+    (grouped[p.model] ||= []).push(p);
+  }
+  return Object.keys(grouped).map(model => `
+    <div class="picker-group">${escapeHtml(model)}</div>
+    ${grouped[model].map(p => `
+      <label class="picker-option">
+        <input type="checkbox" data-picker-select="${content.id}" data-product-id="${p.id}"
+               ${(content.productIds || []).includes(p.id) ? "checked" : ""} />
+        <span class="color">${escapeHtml(p.color)}</span>
+      </label>
+    `).join("")}
+  `).join("");
+}
+
+function renderContentStats() {
+  const total = state.content.length;
+  const done = state.content.filter(c => c.status === "Çekildi").length;
+  const pending = state.content.filter(c => c.status === "Planlandı").length;
+  const reshoot = state.content.filter(c => c.status === "Tekrar").length;
+  const totalMin = state.content.reduce((s, c) => s + (Number(c.duration) || 0), 0);
+  const hours = Math.floor(totalMin / 60);
+  const mins = totalMin % 60;
+  document.getElementById("content-stats").innerHTML = `
+    <div class="stat-card"><div class="label">Toplam içerik</div><div class="value">${total}</div></div>
+    <div class="stat-card"><div class="label">Çekildi</div><div class="value">${done}<small> / ${total}</small></div></div>
+    <div class="stat-card"><div class="label">Planlandı</div><div class="value">${pending}</div></div>
+    <div class="stat-card"><div class="label">Tekrar</div><div class="value">${reshoot}</div></div>
+    <div class="stat-card"><div class="label">Planlı süre</div><div class="value">${hours}sa ${mins}dk</div></div>
+  `;
+}
+
+// ============================================================
+// EVENT HANDLERS
+// ============================================================
+
+// Tab switching
+document.querySelectorAll("nav button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll("nav button").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
+  });
+});
+
+// === Field updates ===
+// Text inputs / textareas: save on BLUR
+// Selects / number: save on CHANGE
+function bindFieldUpdate(container) {
+  container.addEventListener("blur", (e) => {
+    const t = e.target;
+    if (!t.dataset.id || !t.dataset.field) return;
+    if (t.tagName === "SELECT") return; // selects handled below
+    const coll = t.dataset.collection;
+    let value = t.value;
+    if (t.dataset.type === "number") value = Number(value) || 0;
+    if (coll === "products") updateProductField(t.dataset.id, t.dataset.field, value);
+    else if (coll === "content") updateContentField(t.dataset.id, t.dataset.field, value);
+  }, true); // useCapture for blur
+
+  container.addEventListener("change", (e) => {
+    const t = e.target;
+    if (!t.dataset.id || !t.dataset.field) return;
+    if (t.tagName !== "SELECT") return; // only handle selects here
+    const coll = t.dataset.collection;
+    if (coll === "products") updateProductField(t.dataset.id, t.dataset.field, t.value);
+    else if (coll === "content") updateContentField(t.dataset.id, t.dataset.field, t.value);
+  });
+}
+bindFieldUpdate(document.getElementById("product-tbody"));
+bindFieldUpdate(document.getElementById("content-tbody"));
+
+// Auto-grow textareas as user types
+document.getElementById("content-tbody").addEventListener("input", (e) => {
+  if (e.target.tagName === "TEXTAREA") autoGrowTextarea(e.target);
+});
+
+// Product delete
+document.getElementById("product-tbody").addEventListener("click", (e) => {
+  const id = e.target.dataset.deleteProduct;
+  if (!id) return;
+  if (!confirm("Bu ürünü silmek istediğine emin misin? İçeriklerden de kaldırılacak.")) return;
+  deleteProductById(id).then(() => toast("Ürün silindi"));
+});
+
+// Add product
+document.getElementById("btn-add-product").addEventListener("click", () => {
+  document.getElementById("modal-product").classList.add("open");
+  document.getElementById("new-product-model").focus();
+});
+document.getElementById("confirm-add-product").addEventListener("click", async () => {
+  const model = document.getElementById("new-product-model").value.trim();
+  const color = document.getElementById("new-product-color").value.trim();
+  if (!model || !color) { toast("Model ve renk gerekli"); return; }
+  await addProduct(model, color);
+  document.getElementById("new-product-model").value = "";
+  document.getElementById("new-product-color").value = "";
+  document.getElementById("modal-product").classList.remove("open");
+  toast("Ürün eklendi");
+});
+document.querySelectorAll("[data-close-modal]").forEach(btn => {
+  btn.addEventListener("click", () => document.getElementById("modal-product").classList.remove("open"));
+});
+
+// Content delete
+document.getElementById("content-tbody").addEventListener("click", (e) => {
+  const id = e.target.dataset.deleteContent;
+  if (!id) return;
+  if (!confirm("Bu içerik satırını silmek istediğine emin misin?")) return;
+  deleteContentRow(id).then(() => toast("İçerik silindi"));
+});
+
+// Add content
+document.getElementById("btn-add-content").addEventListener("click", () => {
+  addContentRow().then(() => toast("İçerik satırı eklendi"));
+});
+
+// === Product picker ===
+document.addEventListener("click", (e) => {
+  const toggleId = e.target.closest("[data-picker-toggle]")?.dataset?.pickerToggle;
+  if (toggleId) {
+    document.querySelectorAll(".picker-dropdown.open").forEach(d => {
+      if (d.dataset.pickerDropdown !== toggleId) d.classList.remove("open");
+    });
+    document.querySelectorAll(".picker-display.open").forEach(d => {
+      if (d.dataset.pickerToggle !== toggleId) d.classList.remove("open");
+    });
+    document.querySelector(`[data-picker-toggle="${toggleId}"]`)?.classList.toggle("open");
+    document.querySelector(`[data-picker-dropdown="${toggleId}"]`)?.classList.toggle("open");
+    return;
+  }
+  if (!e.target.closest(".product-picker")) {
+    document.querySelectorAll(".picker-dropdown.open").forEach(d => d.classList.remove("open"));
+    document.querySelectorAll(".picker-display.open").forEach(d => d.classList.remove("open"));
+  }
+});
+
+// Picker checkbox toggle
+document.getElementById("content-tbody").addEventListener("change", async (e) => {
+  const t = e.target;
+  if (!t.dataset.pickerSelect) return;
+  const contentId = t.dataset.pickerSelect;
+  const productId = t.dataset.productId;
+  const c = state.content.find(c => c.id === contentId);
+  if (!c) return;
+  let newIds = [...(c.productIds || [])];
+  if (t.checked) {
+    if (!newIds.includes(productId)) newIds.push(productId);
+  } else {
+    newIds = newIds.filter(id => id !== productId);
+  }
+  await updateContentField(contentId, "productIds", newIds);
+});
+
+// Picker search
+document.getElementById("content-tbody").addEventListener("input", (e) => {
+  const t = e.target;
+  if (!t.dataset.pickerSearch) return;
+  const contentId = t.dataset.pickerSearch;
+  const c = state.content.find(c => c.id === contentId);
+  if (!c) return;
+  const dropdown = document.querySelector(`[data-picker-dropdown="${contentId}"]`);
+  const searchBox = dropdown.querySelector(".picker-search");
+  while (searchBox.nextSibling) dropdown.removeChild(searchBox.nextSibling);
+  const tmp = document.createElement("div");
+  tmp.innerHTML = renderPickerOptions(c, t.value);
+  while (tmp.firstChild) dropdown.appendChild(tmp.firstChild);
+});
+
+// === Reference photos: upload ===
+document.getElementById("content-tbody").addEventListener("change", async (e) => {
+  const t = e.target;
+  if (!t.dataset.refUpload) return;
+  const contentId = t.dataset.refUpload;
+  const files = Array.from(t.files);
+  if (!files.length) return;
+
+  // Show optimistic uploading placeholders
+  const cell = document.querySelector(`[data-ref-cell="${contentId}"]`);
+  const placeholders = files.map(() => {
+    const ph = document.createElement("div");
+    ph.className = "ref-thumb uploading";
+    return ph;
+  });
+  placeholders.forEach(ph => cell.insertBefore(ph, cell.querySelector(".ref-upload")));
+
+  let ok = 0, fail = 0;
+  for (const file of files) {
+    try {
+      await uploadContentRef(contentId, file);
+      ok++;
+    } catch (err) {
+      console.error(err);
+      fail++;
+    }
+  }
+  toast(`${ok} görsel eklendi${fail ? ` (${fail} hata)` : ""}`);
+});
+
+// === Reference photos: delete + view ===
+document.getElementById("content-tbody").addEventListener("click", (e) => {
+  // Delete
+  const del = e.target.closest("[data-ref-delete]");
+  if (del) {
+    e.stopPropagation();
+    deleteContentRef(del.dataset.refDelete, parseInt(del.dataset.refIndex));
+    return;
+  }
+  // View
+  const thumb = e.target.closest(".ref-thumb");
+  if (thumb && !thumb.classList.contains("uploading")) {
+    const cid = thumb.dataset.contentId;
+    const idx = parseInt(thumb.dataset.refIndex);
+    const c = state.content.find(c => c.id === cid);
+    if (c?.refs[idx]) {
+      document.getElementById("image-viewer-img").src = c.refs[idx].url;
+      document.getElementById("modal-image").classList.add("open");
+    }
+  }
+});
+
+// Image viewer close
+document.getElementById("image-close").addEventListener("click", () =>
+  document.getElementById("modal-image").classList.remove("open"));
+document.getElementById("modal-image").addEventListener("click", (e) => {
+  if (e.target.id === "modal-image") document.getElementById("modal-image").classList.remove("open");
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    document.getElementById("modal-image").classList.remove("open");
+    document.getElementById("modal-product").classList.remove("open");
+  }
+});
+
+// === Export (backup) ===
+document.getElementById("btn-export").addEventListener("click", () => {
+  const data = {
+    exported_at: new Date().toISOString(),
+    products: state.products,
+    content: state.content.map(c => ({
+      ...c,
+      // refs include URLs which are valid Firebase Storage URLs
+    })),
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const date = new Date().toISOString().slice(0, 10);
+  a.href = url; a.download = `prev-cekim-yedek-${date}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast("Yedek alındı");
+});
+
+// === Online/offline indicator ===
+window.addEventListener("online", () => setSyncStatus("ok"));
+window.addEventListener("offline", () => setSyncStatus("error"));
+
+</script>
+
+</body>
+</html>
