@@ -456,11 +456,11 @@
     cursor: default;
     background: #fff;
     color: #fff;
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 700;
+    line-height: 1;
   }
   .check.checked { background: var(--sage); border-color: var(--sage); }
-  .check.checked::after { content: "✓"; }
   .check[title] { cursor: help; }
 
   /* Status checkbox (Durum column) */
@@ -1419,9 +1419,9 @@ function renderProducts() {
       <td><input type="text" value="${escapeHtml(p.color)}" data-field="color" data-id="${p.id}" data-collection="products" /></td>
       ${PRODUCT_FLAGS.map(flag => {
         const rows = catMap[p.id]?.[flag] || [];
-        const checked = rows.length > 0;
-        const title = checked ? `Çekildi · İçerik #${rows.join(", #")}` : "Bu kategoride henüz çekildi olarak işaretlenmedi";
-        return `<td class="check-cell"><div class="check ${checked ? "checked" : ""}" title="${title}"></div></td>`;
+        const count = rows.length;
+        const title = count > 0 ? `${count} çekim · İçerik #${rows.join(", #")}` : "Bu kategoride henüz çekildi olarak işaretlenmedi";
+        return `<td class="check-cell"><div class="check ${count > 0 ? "checked" : ""}" title="${title}">${count > 0 ? count : ""}</div></td>`;
       }).join("")}
       <td class="center"><button class="btn-danger" data-delete-product="${p.id}" title="Sil">×</button></td>
     </tr>
